@@ -1,0 +1,15 @@
+{
+  "experiment_name": "Checkout Button Colour Test",
+  "hypothesis": "Changing the CTA button from grey to green increases conversion rate",
+  "metric": "conversion_rate",
+  "control_label": "Control (Grey Button)",
+  "treatment_label": "Treatment (Green Button)",
+  "control_conversion_rate": 0.05,
+  "treatment_conversion_rate": 0.058,
+  "sample_size_per_group": 10000,
+  "significance_level": 0.05,
+  "power": 0.80,
+  "revenue_per_conversion": 45.00,
+  "currency": "USD",
+  "random_seed": 42
+}
