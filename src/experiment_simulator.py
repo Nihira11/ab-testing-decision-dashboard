@@ -143,7 +143,7 @@ def load_or_simulate(
         print(f"Loaded existing data: {len(df):,} rows from {csv_path}")
         return df
 
-    print("No existing data found — running simulator...")
+    print("No existing data found – running simulator...")
     sim = ExperimentSimulator(config_path=config_path)
     return sim.simulate(save=True)
 
