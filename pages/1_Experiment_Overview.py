@@ -23,9 +23,9 @@ config = get_config()
 df = get_df()
 
 st.title("Experiment Overview")
-st.caption(f"**{config['experiment_name']}** — {config.get('hypothesis', '')}")
+st.caption(f"**{config['experiment_name']}** – {config.get('hypothesis', '')}")
 
-# sample sizes + SRM check
+# sample sizes + SRM check 
 
 sizes = get_sample_sizes(df)
 dates = get_date_range(df)
@@ -34,13 +34,13 @@ c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total users", f"{sizes['total']:,}")
 c2.metric("Control", f"{sizes['control']:,}")
 c3.metric("Treatment", f"{sizes['treatment']:,}")
-c4.metric("Duration", f"{dates['days']} days" if dates else "—")
+c4.metric("Duration", f"{dates['days']} days" if dates else "–")
 
 st.subheader("Sample Ratio Mismatch (SRM) check")
 st.markdown(
     "Before trusting any results, verify the randomisation actually delivered the "
     "intended 50/50 split. A significant SRM usually means a bug in assignment or "
-    "logging — and invalidates the experiment."
+    "logging – and invalidates the experiment."
 )
 
 n_ctrl, n_trt = sizes["control"], sizes["treatment"]
@@ -52,9 +52,9 @@ s2.metric("Chi-square", f"{srm.statistic:.4f}")
 s3.metric("SRM p-value", f"{srm.pvalue:.4f}")
 
 if srm.pvalue < 0.001:
-    st.error("⚠️ Sample ratio mismatch detected (p < 0.001). Do **not** trust these results — investigate the assignment mechanism.")
+    st.error("⚠️ Sample ratio mismatch detected (p < 0.001). Do **not** trust these results – investigate the assignment mechanism.")
 else:
-    st.success("No sample ratio mismatch — the split is consistent with 50/50 randomisation.")
+    st.success("No sample ratio mismatch – the split is consistent with 50/50 randomisation.")
 
 # summary stats
 
@@ -79,16 +79,17 @@ st.markdown(
 )
 st.plotly_chart(plot_conversions_over_time(df), use_container_width=True)
 
-col_left, col_right = st.columns(2)
-
 device_df = get_device_breakdown(df)
-with col_left:
-    if device_df is not None:
-        st.plotly_chart(plot_device_breakdown(device_df), use_container_width=True)
-    else:
-        st.info("No `device` column in this dataset — segment breakdown skipped.")
+extra_charts = []
+if device_df is not None:
+    extra_charts.append(plot_device_breakdown(device_df))
+if df["revenue"].abs().sum() > 0:
+    extra_charts.append(plot_revenue_distribution(df))
 
-with col_right:
-    st.plotly_chart(plot_revenue_distribution(df), use_container_width=True)
+if extra_charts:
+    cols = st.columns(len(extra_charts))
+    for col, fig in zip(cols, extra_charts):
+        with col:
+            st.plotly_chart(fig, use_container_width=True)
 
 sidebar_data_status()

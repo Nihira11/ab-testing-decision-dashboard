@@ -5,6 +5,7 @@ scipy
 statsmodels
 plotly
 matplotlib
-pymc
 fpdf2
 python-dotenv
+tabulate
+reportlab

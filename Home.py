@@ -43,7 +43,7 @@ with tab_demo:
     col1, col2 = st.columns([2, 1])
     with col1:
         st.markdown(f"**{config['experiment_name']}**")
-        st.markdown(f"*Hypothesis:* {config.get('hypothesis', '—')}")
+        st.markdown(f"*Hypothesis:* {config.get('hypothesis', '–')}")
         st.markdown(
             f"- {config.get('control_label', 'Control')} vs {config.get('treatment_label', 'Treatment')}\n"
             f"- {config['sample_size_per_group']:,} users per group\n"

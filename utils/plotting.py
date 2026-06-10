@@ -16,21 +16,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from utils.formatting import COLOURS
 
 
-# ── Shared layout defaults ────────────────────────────────────────────────────
+# shared layout defaults
 
 def _base_layout(**kwargs) -> dict:
     """Base layout applied to every chart."""
     base = dict(
-        font=dict(family="Inter, sans-serif", size=13),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        margin=dict(l=60, r=40, t=60, b=60),
+        font=dict(family="IBM Plex Sans, Inter, sans-serif", size=13, color="#33302E"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=60, r=40, t=60, b=95),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
+            yanchor="top",
+            y=-0.28,
+            xanchor="center",
+            x=0.5,
         ),
     )
     base.update(kwargs)
@@ -38,7 +38,7 @@ def _base_layout(**kwargs) -> dict:
 
 
 def _add_gridlines(fig: go.Figure, axis: str = "y") -> go.Figure:
-    update = dict(showgrid=True, gridcolor="#EEEEEE", gridwidth=1, zeroline=False)
+    update = dict(showgrid=True, gridcolor="#EBD9C7", gridwidth=1, zeroline=False)
     if axis in ("y", "both"):
         fig.update_yaxes(**update)
     if axis in ("x", "both"):
@@ -46,13 +46,9 @@ def _add_gridlines(fig: go.Figure, axis: str = "y") -> go.Figure:
     return fig
 
 
-# ── 1. Conversion rate bar chart ──────────────────────────────────────────────
+# 1. conversion rate bar chart
 
 def plot_conversion_rates(conv_result) -> go.Figure:
-    """
-    Bar chart comparing conversion rates with error bars (Wilson CI).
-    conv_result: ProportionTestResult from StatsEngine
-    """
     groups = ["Control", "Treatment"]
     rates  = [conv_result.control_rate * 100, conv_result.treatment_rate * 100]
     errors = [
@@ -67,7 +63,7 @@ def plot_conversion_rates(conv_result) -> go.Figure:
             name=group,
             x=[group],
             y=[rate],
-            error_y=dict(type="data", array=[err], visible=True, color="#555555", thickness=1.5),
+            error_y=dict(type="data", array=[err], visible=True, color="#8E8478", thickness=1.5),
             marker_color=colour,
             width=0.4,
             text=f"{rate:.2f}%",
@@ -84,12 +80,9 @@ def plot_conversion_rates(conv_result) -> go.Figure:
     return fig
 
 
-# ── 2. Conversion rate CI overlap chart ──────────────────────────────────────
+# 2. conversion rate CI overlap chart
 
 def plot_ci_overlap(conv_result) -> go.Figure:
-    """
-    Horizontal confidence interval chart showing CI overlap between groups.
-    """
     groups = ["Control", "Treatment"]
     means  = [conv_result.control_rate * 100,  conv_result.treatment_rate * 100]
     lows   = [conv_result.control_ci[0] * 100,  conv_result.treatment_ci[0] * 100]
@@ -98,7 +91,6 @@ def plot_ci_overlap(conv_result) -> go.Figure:
 
     fig = go.Figure()
     for i, (group, mean, low, high, colour) in enumerate(zip(groups, means, lows, highs, colours)):
-        # CI line
         fig.add_trace(go.Scatter(
             x=[low, high],
             y=[group, group],
@@ -106,7 +98,6 @@ def plot_ci_overlap(conv_result) -> go.Figure:
             line=dict(color=colour, width=3),
             showlegend=False,
         ))
-        # mean point
         fig.add_trace(go.Scatter(
             x=[mean],
             y=[group],
@@ -115,7 +106,6 @@ def plot_ci_overlap(conv_result) -> go.Figure:
             name=group,
             showlegend=True,
         ))
-        # CI caps
         for x_val in [low, high]:
             fig.add_trace(go.Scatter(
                 x=[x_val, x_val],
@@ -134,16 +124,11 @@ def plot_ci_overlap(conv_result) -> go.Figure:
     return fig
 
 
-# ── 3. Posterior distribution overlay ────────────────────────────────────────
+# 3. posterior distribution overlay
 
 def plot_posterior_distributions(curves_df: pd.DataFrame) -> go.Figure:
-    """
-    Overlaid Beta posterior PDFs for control, treatment, and prior.
-    curves_df: output of BayesianEngine.posterior_curves()
-    """
     fig = go.Figure()
 
-    # prior (only if it has visible density – flat Beta(1,1) is nearly invisible)
     if curves_df["prior"].max() < 50:
         fig.add_trace(go.Scatter(
             x=curves_df["x"] * 100,
@@ -154,7 +139,6 @@ def plot_posterior_distributions(curves_df: pd.DataFrame) -> go.Figure:
             fill=None,
         ))
 
-    # control posterior
     fig.add_trace(go.Scatter(
         x=curves_df["x"] * 100,
         y=curves_df["control"],
@@ -162,10 +146,9 @@ def plot_posterior_distributions(curves_df: pd.DataFrame) -> go.Figure:
         name="Control posterior",
         line=dict(color=COLOURS["control"], width=2.5),
         fill="tozeroy",
-        fillcolor=f"rgba(76, 114, 176, 0.15)",
+        fillcolor=f"rgba(15, 84, 153, 0.10)",
     ))
 
-    # treatment posterior
     fig.add_trace(go.Scatter(
         x=curves_df["x"] * 100,
         y=curves_df["treatment"],
@@ -173,7 +156,7 @@ def plot_posterior_distributions(curves_df: pd.DataFrame) -> go.Figure:
         name="Treatment posterior",
         line=dict(color=COLOURS["treatment"], width=2.5),
         fill="tozeroy",
-        fillcolor=f"rgba(221, 132, 82, 0.15)",
+        fillcolor=f"rgba(153, 15, 61, 0.10)",
     ))
 
     fig.update_layout(
@@ -185,16 +168,11 @@ def plot_posterior_distributions(curves_df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# ── 4. Uplift distribution histogram ─────────────────────────────────────────
+# 4. uplift distribution histogram
 
 def plot_uplift_distribution(uplift_df: pd.DataFrame) -> go.Figure:
-    """
-    Histogram of sampled uplift (treatment - control) from posterior draws.
-    uplift_df: output of BayesianEngine.uplift_distribution()
-    """
     uplift = uplift_df["uplift"].values * 100  # convert to %
 
-    # split into positive / negative for colouring
     pos = uplift[uplift >= 0]
     neg = uplift[uplift <  0]
 
@@ -217,10 +195,8 @@ def plot_uplift_distribution(uplift_df: pd.DataFrame) -> go.Figure:
         opacity=0.7,
     ))
 
-    # vertical line at zero
-    fig.add_vline(x=0, line_width=1.5, line_dash="dash", line_color="#333333")
+    fig.add_vline(x=0, line_width=1.5, line_dash="dash", line_color="#66605B")
 
-    # vertical line at observed lift
     obs_lift = float(np.mean(uplift))
     fig.add_vline(
         x=obs_lift,
@@ -241,19 +217,14 @@ def plot_uplift_distribution(uplift_df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# ── 5. Revenue impact chart ───────────────────────────────────────────────────
+# 5. revenue impact chart
 
 def plot_revenue_impact(revenue_impact) -> go.Figure:
-    """
-    Bar chart showing daily and annual revenue impact with CI range.
-    revenue_impact: RevenueImpact from DecisionEngine
-    """
     fig = make_subplots(
         rows=1, cols=2,
         subplot_titles=("Daily Revenue Lift", "Annual Revenue Lift"),
     )
 
-    # daily
     fig.add_trace(go.Bar(
         x=["Daily lift"],
         y=[revenue_impact.daily_revenue_lift],
@@ -263,7 +234,6 @@ def plot_revenue_impact(revenue_impact) -> go.Figure:
         showlegend=False,
     ), row=1, col=1)
 
-    # annual with error bar showing CI range
     annual_mid   = revenue_impact.annual_revenue_lift
     annual_low   = revenue_impact.annual_revenue_lift_low
     annual_high  = revenue_impact.annual_revenue_lift_high
@@ -278,7 +248,7 @@ def plot_revenue_impact(revenue_impact) -> go.Figure:
             array=[error_plus],
             arrayminus=[error_minus],
             visible=True,
-            color="#555555",
+            color="#8E8478",
             thickness=1.5,
         ),
         marker_color=COLOURS["positive"] if annual_mid >= 0 else COLOURS["negative"],
@@ -296,14 +266,9 @@ def plot_revenue_impact(revenue_impact) -> go.Figure:
     return fig
 
 
-# ── 6. Scenario analysis chart ────────────────────────────────────────────────
+# 6. scenario analysis chart
 
 def plot_scenario_analysis(scenarios_df: pd.DataFrame) -> go.Figure:
-    """
-    Horizontal bar chart of annual revenue impact across scenarios.
-    scenarios_df: output of DecisionEngine.scenario_df()
-    """
-    # parse the formatted strings back to numbers for plotting
     annual_vals = (
         scenarios_df["Annual revenue impact"]
         .str.replace("[$,]", "", regex=True)
@@ -328,7 +293,7 @@ def plot_scenario_analysis(scenarios_df: pd.DataFrame) -> go.Figure:
         showlegend=False,
     ))
 
-    fig.add_vline(x=0, line_width=1, line_dash="solid", line_color="#333333")
+    fig.add_vline(x=0, line_width=1, line_dash="solid", line_color="#66605B")
 
     fig.update_layout(
         **_base_layout(
@@ -342,13 +307,9 @@ def plot_scenario_analysis(scenarios_df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# ── 7. Power curve ────────────────────────────────────────────────────────────
+# 7. power curve
 
 def plot_power_curve(stats_engine, mde_range: list = None) -> go.Figure:
-    """
-    Power curve showing achieved power vs sample size for a range of MDEs.
-    stats_engine: StatsEngine instance
-    """
     from statsmodels.stats.power import NormalIndPower
 
     if mde_range is None:
@@ -384,17 +345,15 @@ def plot_power_curve(stats_engine, mde_range: list = None) -> go.Figure:
             line=dict(width=2),
         ))
 
-    # 80% power reference line
     fig.add_hline(
         y=0.80,
         line_width=1.5,
         line_dash="dash",
-        line_color="#333333",
+        line_color="#66605B",
         annotation_text="80% power",
         annotation_position="right",
     )
 
-    # current sample size
     current_n = len(stats_engine.control)
     fig.add_vline(
         x=current_n,
@@ -415,13 +374,9 @@ def plot_power_curve(stats_engine, mde_range: list = None) -> go.Figure:
     return fig
 
 
-# ── 8. Device segment breakdown ───────────────────────────────────────────────
+# 8. device segment breakdown
 
 def plot_device_breakdown(device_df: pd.DataFrame) -> go.Figure:
-    """
-    Grouped bar chart of conversion rate by device and group.
-    device_df: output of get_device_breakdown() from data_loader
-    """
     devices  = device_df["device"].unique().tolist()
     ctrl_df  = device_df[device_df["group"] == "control"]
     trt_df   = device_df[device_df["group"] == "treatment"]
@@ -454,12 +409,9 @@ def plot_device_breakdown(device_df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# ── 9. Conversions over time ──────────────────────────────────────────────────
+# 9. conversions over time
 
 def plot_conversions_over_time(df: pd.DataFrame) -> go.Figure:
-    """
-    Line chart of daily cumulative conversion rate over the experiment period.
-    """
     df = df.copy()
     df["date"] = pd.to_datetime(df["timestamp"]).dt.date
 
@@ -491,12 +443,9 @@ def plot_conversions_over_time(df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# ── 10. Revenue distribution ──────────────────────────────────────────────────
+# 10. revenue distribution
 
 def plot_revenue_distribution(df: pd.DataFrame) -> go.Figure:
-    """
-    Overlapping histogram of revenue per user (converters only) by group.
-    """
     converters = df[df["converted"] == 1]
     ctrl_rev   = converters[converters["group"] == "control"]["revenue"]
     trt_rev    = converters[converters["group"] == "treatment"]["revenue"]
@@ -525,49 +474,3 @@ def plot_revenue_distribution(df: pd.DataFrame) -> go.Figure:
     )
     _add_gridlines(fig)
     return fig
-
-
-# ── Quick test ────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, ".")
-    from src.experiment_simulator import load_or_simulate
-    from src.stats_engine import StatsEngine
-    from src.bayesian_engine import BayesianEngine
-    from src.decision_engine import DecisionEngine
-    from utils.data_loader import get_device_breakdown
-    import json
-
-    df     = load_or_simulate()
-    stats  = StatsEngine(df)
-    bayes  = BayesianEngine(df)
-
-    with open("data/experiment_config.json") as f:
-        config = json.load(f)
-
-    decision = DecisionEngine(
-        stats_result=stats.test_conversion_rate(),
-        bayesian_result=bayes.analyse(),
-        revenue_per_conversion=config["revenue_per_conversion"],
-    )
-
-    # test each chart renders without error
-    charts = [
-        ("Conversion rates",       plot_conversion_rates(stats.test_conversion_rate())),
-        ("CI overlap",             plot_ci_overlap(stats.test_conversion_rate())),
-        ("Posterior distributions",plot_posterior_distributions(bayes.posterior_curves())),
-        ("Uplift distribution",    plot_uplift_distribution(bayes.uplift_distribution())),
-        ("Revenue impact",         plot_revenue_impact(decision.revenue_impact())),
-        ("Scenario analysis",      plot_scenario_analysis(decision.scenario_df())),
-        ("Power curve",            plot_power_curve(stats)),
-        ("Device breakdown",       plot_device_breakdown(get_device_breakdown(df))),
-        ("Conversions over time",  plot_conversions_over_time(df)),
-        ("Revenue distribution",   plot_revenue_distribution(df)),
-    ]
-
-    for name, fig in charts:
-        n_traces = len(fig.data)
-        print(f"  {name}: OK ({n_traces} trace{'s' if n_traces != 1 else ''})")
-
-    print(f"\nAll {len(charts)} charts rendered successfully.")

@@ -24,7 +24,7 @@ from utils.theme import inject_css
 PAGE_KWARGS = dict(layout="wide", initial_sidebar_state="expanded")
 
 
-# data
+# data 
 
 def get_config() -> dict:
     if "config" not in st.session_state:
@@ -73,7 +73,7 @@ def simulate_scenario(treatment_rate: float, seed: int = 42) -> pd.DataFrame:
     return sim.simulate(save=False)
 
 
-# cached engine runs
+# cached engine runs 
 
 @st.cache_data(show_spinner="Running frequentist tests...")
 def run_stats(
@@ -83,18 +83,21 @@ def run_stats(
     target_power: float = 0.80,
 ) -> dict:
     engine = StatsEngine(df, alpha=alpha)
-    results = engine.run_all()
-    # recompute the power slice with the user's MDE / target settings
-    results["power"] = engine.power_analysis(
-        mde_relative_pct=mde_relative_pct, target_power=target_power
-    )
-    return results
+    return {
+        "summary":    engine.summary_df(),
+        "conversion": engine.test_conversion_rate(),
+        "revenue":    engine.test_revenue_per_user(),
+        "power":      engine.power_analysis(
+            mde_relative_pct=mde_relative_pct, target_power=target_power),
+        # real-world uploads may not have a device column
+        "chi_square": engine.chi_square_segment("device") if "device" in df.columns else None,
+    }
 
 
 @st.cache_data(show_spinner="Sampling posteriors...")
 def run_bayes(df: pd.DataFrame, prior_alpha: float = 1.0, prior_beta: float = 1.0) -> dict:
     """Fast Bayesian results (posteriors, P(best), uplift). Excludes the slow
-    sample-size simulation — use run_bayes_sample_size for that."""
+    sample-size simulation – use run_bayes_sample_size for that."""
     engine = BayesianEngine(df, prior_alpha=prior_alpha, prior_beta=prior_beta)
     return {
         "result":      engine.analyse(),
