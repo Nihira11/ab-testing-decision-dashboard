@@ -4,8 +4,5 @@ numpy
 scipy
 statsmodels
 plotly
-matplotlib
-fpdf2
-python-dotenv
 tabulate
 reportlab
